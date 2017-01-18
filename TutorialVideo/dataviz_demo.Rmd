@@ -1,0 +1,52 @@
+---
+title: "Demo - Data Visualization with ggplot2"
+author: "Eric Chang"
+date: "January 18, 2017"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+This demo will walk through the creation of a plot to visualize the location of functional and nonfunctional water pumps in Tanzania using ggplot2 in R.
+
+First we need to read in the data and import ggplot2 (and dplyr for data munging).
+
+```{r, message=F}
+require(ggplot2)
+require(dplyr)
+dat <- read.csv("Data/demo_data_clean.csv")
+```
+
+While there are many features (columns) that will go into our machine learning model, the features we're going to visualize are: *functional_status* (whether the pump is working or not), *latitude*, and *longitude*.
+
+```{r}
+dat <- select(dat, functional_status, latitude, longitude)
+```
+
+First, let's plot all the points on a map. We do this by first initializing ggplot with the `ggplot()` function, then adding a scatterplot layer called `geom_point()`. The aesthetics, `aes()`, are the column names that contain the data to be plotted. We set x to longitude and y to latitude.
+
+```{r}
+ggplot(data=dat) + geom_point(aes(x=longitude, y=latitude))
+```
+
+This map already resembles the shape of Tanzania, but it's a bit cluttered. Let's take down the size of the dots by adding a `size = .1` parameter to the plot.
+
+```{r}
+ggplot(data=dat) + geom_point(aes(x=longitude, y=latitude), size=.1)
+```
+
+Much better. Now let's visualize where the good pumps and bad pumps are located. To do this, we'll add the *functional_status* feature to the aesthetics in order to differentiate different types of pumps. We can do this with a number of aesthetics(shape, color, size, etc). Let's try color .
+
+```{r}
+ggplot(data=dat) + 
+  geom_point(aes(x=longitude, y=latitude, color=functional_status), size=.1)
+```
+
+One last thing. It's a bit difficult to see what's going on if all the points are on top of each other. Let's separate the bad pumps and good pumps into different plots. To do this, all we need to do is add the `facet_grid()` layer to our plot.
+
+```{r, fig.width=15}
+ggplot(data=dat) + 
+  geom_point(aes(x=longitude, y=latitude, color=functional_status), size=.1) +
+  facet_grid(. ~ functional_status)
+```
+

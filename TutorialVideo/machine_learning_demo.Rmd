@@ -1,0 +1,66 @@
+---
+title: "Demo - Machine Learning using XGBOOST"
+author: "Eric Chang"
+date: "January 18, 2017"
+output: html_document
+---
+
+This is a demo of how a machine learning model can be trained to classify the good and bad water pumps in our Tanzania example. The algorithm we will be using is called XGBOOST - Extreme Gradient Boosting. 
+
+This demo will not touch on the mechanics or the code to create such a model, but will demonstrate how great results can be achieved in a very short period of time using machine learning.
+
+```{r, message=F}
+require(dplyr)
+require(xgboost)
+require(magrittr)
+source('./R/model_functions.R')
+
+# Read in data
+train <- read.csv("Data/demo_data_clean.csv")
+
+# Relevel training labels to use binary:logistic on xgboost
+levels(train$functional_status) <- c(0, 1)
+
+# Create xgboost matrices
+train_xgbmatrix <- create_xgb_matrices(train, type = 'train')
+```
+
+At this point we're ready to train our model. Let's give it a shot.
+
+```{r, message=F}
+# Train XGBOOST model to classify pump status
+model_cv <- 
+  xgb.cv(data = train_xgbmatrix,
+         objective = "binary:logistic",
+         eval_metric = "error",
+         nrounds = 1000, 
+         nthread = 7,
+         nfold = 3,
+         eta = .1,
+         max.depth = 12,
+         min_child_weight = 6,
+         colsample_bytree = .4,
+         subsample = 1,
+         gamma = 0,
+         print_every_n = 1)
+```
+
+The long list of numbers gives the progress of minimizing the error at each iteration. We want to find a 'goldilocks' number of iterations. Too low and the model is not finished training, too high and it has overfit.
+
+Overfitting means that the model is capturing details too specific to the data we are feeding it, rendering it useless for new data. An example would be if it sees that a pump is nonfunctional at (lat, long) = (100, 100), it concludes that ANY pump near the point (100, 100) is broken. The "test error" gives us an estimate of how our model performs on new data.
+
+Let's plot the test error in blue and the training error in red to take a look at how they relate to the number of iterations.
+
+```{r}
+# Find optimal number of iterations and test error
+eval_xgb_cv(model_cv)
+```
+
+The final result gives us the correct water pump status around 82% of the time. This is a great result since the good and bad pumps were split around 50/50 in our data (see below).
+
+```{r}
+levels(train$functional_status) <- c("not functional", "functional")
+train$functional_status %>% table() %>% prop.table()
+```
+
+The availability of accurate predictions for which pumps are at risk of breaking down could help humanitarian organizations figure out where to send their workers. This is one short example of how data science and machine learning could be used for social good!
