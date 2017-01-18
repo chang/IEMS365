@@ -1,0 +1,24 @@
+---
+title: "Country Indicators"
+author: "Eric"
+date: "January 16, 2017"
+output: pdf_document
+---
+
+```{r, message=F}
+require(dplyr)
+require(magrittr)
+require(tidyr)
+indicators <- read.csv("TrainingSet.csv")
+```
+
+```{r}
+indicators %>% 
+  gather(X1972..YR1972.:X2007..YR2007., key="year", value="value") %>%
+  filter(!is.na(value)) %>%  # get rid of all NA values
+  group_by(Series.Name) %>% 
+  summarise(count = n()) %>% 
+  arrange(count %>% desc()) %>% 
+  head(20)
+```
+
